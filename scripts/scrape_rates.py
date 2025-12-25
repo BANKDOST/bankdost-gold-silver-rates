@@ -24,27 +24,25 @@ gold_22k = "0"
 gold_24k = "0"
 silver_999 = "0"
 
-# Scan all tables
 tables = soup.find_all("table")
 for table in tables:
     rows = table.find_all("tr")
     for tr in rows:
         cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
-        if len(cols) < 5:  # Need at least Name + 1g + ... + 1kg
+        if len(cols) < 5:  # Need at least up to 1kg column
             continue
         
         name = cols[0].lower()
-        price_1g = extract_number(cols[1])      # 1 Gram column
-        price_1kg = extract_number(cols[4])     # 1 Kilogram column (index 4)
+        price_1g = extract_number(cols[1])   # 1 Gram
+        price_1kg = extract_number(cols[4])  # 1 Kilogram
 
-        if "gold 22" in name or "22 karat" in name:
-            gold_22k = price_1g
-        elif "gold 24" in name or "24 karat" in name:
+        if "24 karat" in name or "24karat" in name:
             gold_24k = price_1g
+        elif "22 karat" in name or "22karat" in name:
+            gold_22k = price_1g
         elif "silver 999" in name or "999 fine" in name:
             silver_999 = price_1kg
 
-# Fallback message if not found
 if gold_24k == "0" or gold_22k == "0" or silver_999 == "0":
     print("Warning: Some rates not found. Site structure may have changed.")
 
@@ -65,4 +63,4 @@ with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
 print("Rates fetched successfully from bullions.co.in")
-print(data)  # Optional: print to console for quick check
+print(data)
