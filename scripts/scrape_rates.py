@@ -11,34 +11,35 @@ headers = {"User-Agent": "Mozilla/5.0"}
 res = requests.get(URL, headers=headers, timeout=20)
 soup = BeautifulSoup(res.text, "html.parser")
 
-def clean(text):
+def extract_number(text):
     return re.sub(r"[^\d]", "", text)
 
 gold_22k = "0"
 gold_24k = "0"
 silver_999 = "0"
 
-# Find the rates table
-table = soup.find("table")
-if table:
+# Scan ALL tables
+tables = soup.find_all("table")
+
+for table in tables:
     for tr in table.find_all("tr"):
-        cols = [td.get_text(strip=True) for td in tr.find_all("td")]
+        cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
         if len(cols) < 2:
             continue
 
-        label = cols[0].lower()
+        name = cols[0].lower()
 
-        # ✅ Gold 24K – 1 Gram
-        if "gold 24" in label and "gram" in label:
-            gold_24k = clean(cols[-1])
+        # Price is ALWAYS the LAST column on bullions.co.in
+        price = extract_number(cols[-1])
 
-        # ✅ Gold 22K – 1 Gram
-        if "gold 22" in label and "gram" in label:
-            gold_22k = clean(cols[-1])
+        if "gold 22" in name:
+            gold_22k = price
 
-        # ✅ Silver 999 – 1 Kilogram
-        if "silver 999" in label and "kilogram" in label:
-            silver_999 = clean(cols[-1])
+        elif "gold 24" in name:
+            gold_24k = price
+
+        elif "silver 999" in name:
+            silver_999 = price
 
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
@@ -56,4 +57,4 @@ data = {
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print("Bullions rates updated correctly")
+print("Rates fetched successfully from bullions.co.in")
