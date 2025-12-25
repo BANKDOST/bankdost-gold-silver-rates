@@ -11,21 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           pip install requests beautifulsoup4 pytz
 
+      # 4️⃣ Run scraper
       - name: Run scraper
         run: python scripts/scrape_rates.py
 
+      # 5️⃣ Commit & push updated JSON using PAT
       - name: Commit updated JSON
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
