@@ -27,9 +27,11 @@ jobs:
         run: python scripts/scrape_rates.py
 
       - name: Commit updated JSON
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add gold_silver_rate.json
           git commit -m "Daily gold & silver rate update" || exit 0
-          git push
+          git push https://x-access-token:${GH_PAT}@github.com/BANKDOST/bankdost-gold-silver-rates.git HEAD:main
