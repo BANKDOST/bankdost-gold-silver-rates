@@ -1,8 +1,9 @@
 name: Daily Gold & Silver Rates
 
+# Run daily at 10:00 AM IST
 on:
   schedule:
-    - cron: '30 4 * * *'  # 10:00 AM IST
+    - cron: '30 4 * * *'  # UTC 4:30 AM = IST 10:00 AM
   workflow_dispatch:  # allows manual run
 
 jobs:
