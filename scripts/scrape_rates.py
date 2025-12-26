@@ -12,14 +12,13 @@ headers = {
 
 res = requests.get(URL, headers=headers, timeout=30)
 if res.status_code != 200:
-    print(f"Error: Failed to fetch page (status {res.status_code})")
+    print("Failed to fetch page")
     exit()
 
 soup = BeautifulSoup(res.text, "html.parser")
 
 def extract_number(text):
-    cleaned = re.sub(r"[^\d]", "", text)
-    return cleaned if cleaned else "0"
+    return re.sub(r"[^\d]", "", text) or "0"
 
 gold_24k_10g = "0"
 gold_22k_10g = "0"
@@ -33,19 +32,14 @@ for table in tables:
         if len(cols) < 6:
             continue
         
-        row_name = cols[0].lower()
+        row_name_lower = cols[0].lower()
         
-        # Exact matching based on site's row names
-        if "gold 24 karat" in row_name:
+        if "24 karat" in row_name_lower:          # Matches "Gold 24 Karat (Rs ₹)"
             gold_24k_10g = extract_number(cols[2])  # 10 Gram column
-        elif "gold 22 karat" in row_name:
-            gold_22k_10g = extract_number(cols[2])  # 10 Gram column
-        elif "silver 999 fine" in row_name:
-            silver_999_kg = extract_number(cols[4])  # 1 Kilogram column
-
-# Safety check
-if "0" in (gold_24k_10g, gold_22k_10g, silver_999_kg):
-    print("Warning: Failed to extract one or more rates. Site may have changed.")
+        elif "22 karat" in row_name_lower:        # Matches "Gold 22 Karat (Rs ₹)"
+            gold_22k_10g = extract_number(cols[2])
+        elif "999 fine" in row_name_lower:        # Matches "Silver 999 Fine (Rs ₹)"
+            silver_999_kg = extract_number(cols[4]) # 1 Kilogram column
 
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
@@ -63,5 +57,5 @@ data = {
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print("Rates fetched successfully!")
+print("Success!")
 print(json.dumps(data, ensure_ascii=False, indent=2))
