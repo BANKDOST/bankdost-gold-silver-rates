@@ -18,49 +18,34 @@ if res.status_code != 200:
 soup = BeautifulSoup(res.text, "html.parser")
 
 def extract_number(text):
-    return re.sub(r"[^\d]", "", text) or "0"
+    cleaned = re.sub(r"[^\d]", "", text)
+    return cleaned if cleaned else "0"
 
-# Initialize
 gold_24k_10g = "0"
 gold_22k_10g = "0"
 silver_999_kg = "0"
 
 tables = soup.find_all("table")
-print(f"Found {len(tables)} tables on the page.\n")  # Debug
 
-for table_idx, table in enumerate(tables):
-    print(f"--- Processing Table {table_idx + 1} ---")  # Debug
-    rows = table.find_all("tr")
-    for tr in rows:
-        cols = [cell.get_text(strip=True) for cell in tr.find_all(["td", "th"])]
+for table in tables:
+    for tr in table.find_all("tr"):
+        cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
         if len(cols) < 6:
             continue
         
-        name = cols[0]
-        name_lower = name.lower()
-        print(f"Row: {name} | 10g: {cols[2]} | 1kg: {cols[4]}")  # Debug - shows raw values
+        row_name = cols[0].lower()
         
-        if "gold" in name_lower:
-            price_10g = extract_number(cols[2])
-            if "24" in name_lower and ("karat" in name_lower or "carat" in name_lower):
-                gold_24k_10g = price_10g
-                print(f"--> Matched 24K Gold: ₹{price_10g}")
-            elif "22" in name_lower and ("karat" in name_lower or "carat" in name_lower):
-                gold_22k_10g = price_10g
-                print(f"--> Matched 22K Gold: ₹{price_10g}")
-        
-        elif "silver" in name_lower and "999" in name_lower:
-            price_1kg = extract_number(cols[4])
-            silver_999_kg = price_1kg
-            print(f"--> Matched Silver 999: ₹{price_1kg}")
+        # Exact matching based on site's row names
+        if "gold 24 karat" in row_name:
+            gold_24k_10g = extract_number(cols[2])  # 10 Gram column
+        elif "gold 22 karat" in row_name:
+            gold_22k_10g = extract_number(cols[2])  # 10 Gram column
+        elif "silver 999 fine" in row_name:
+            silver_999_kg = extract_number(cols[4])  # 1 Kilogram column
 
-print("\nFinal extracted values:")
-print(f"24K 10g: ₹{gold_24k_10g}")
-print(f"22K 10g: ₹{gold_22k_10g}")
-print(f"Silver kg: ₹{silver_999_kg}")
-
-if gold_24k_10g == "0" or gold_22k_10g == "0" or silver_999_kg == "0":
-    print("ERROR: Missing some rates! Check debug output above.")
+# Safety check
+if "0" in (gold_24k_10g, gold_22k_10g, silver_999_kg):
+    print("Warning: Failed to extract one or more rates. Site may have changed.")
 
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
@@ -78,5 +63,5 @@ data = {
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print("\nRates saved successfully!")
+print("Rates fetched successfully!")
 print(json.dumps(data, ensure_ascii=False, indent=2))
