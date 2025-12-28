@@ -43,7 +43,7 @@ for table in tables:
         print("---")
         # === DEBUG PRINTS END HERE ===
         
-        if "24 karat" in row_name_lower: 
+        if "24" in row_name_lower and "karat" in row_name_lower:
             gold_24k_10g = extract_number(cols[2])
             print(">>> MATCHED 24K!")  # Extra confirmation
         elif "22 karat" in row_name_lower: 
