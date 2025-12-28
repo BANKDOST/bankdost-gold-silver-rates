@@ -25,32 +25,21 @@ gold_22k_10g = "0"
 silver_999_kg = "0"
 
 tables = soup.find_all("table")
-print(f"Found {len(tables)} tables\n")
 
-for table_idx, table in enumerate(tables):
-    print(f"--- Table {table_idx + 1} ---")
+for table in tables:
     for tr in table.find_all("tr"):
         cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
         if len(cols) < 6:
             continue
         
         row_name_lower = cols[0].lower()
-        print(f"Row original: '{cols[0]}'")
-        print(f"Row lowered: '{row_name_lower}'")
-        print(f"10g raw: '{cols[2]}' -> extracted: {extract_number(cols[2])}")
-        print(f"1kg raw: '{cols[4]}' -> extracted: {extract_number(cols[4])}")
-        print("---")
-               if "24" in row_name_lower and "karat" in row_name_lower:
+        
+        if "24" in row_name_lower and "karat" in row_name_lower:  # Robust match for first row "Gold 24 Karat (Rs ₹)"
             gold_24k_10g = extract_number(cols[2])
-            print(">>> 24K MATCHED!")
-        elif "22 karat" in row_name_lower:
+        elif "22 karat" in row_name_lower:  # Matches "Gold 22 Karat (Rs ₹)"
             gold_22k_10g = extract_number(cols[2])
-            print(">>> 22K MATCHED!")
-        elif "999 fine" in row_name_lower:
+        elif "999 fine" in row_name_lower:  # Matches "Silver 999 Fine (Rs ₹)"
             silver_999_kg = extract_number(cols[4])
-            print(">>> SILVER MATCHED!")
-
-print(f"\nFinal extracted: 24K={gold_24k_10g}, 22K={gold_22k_10g}, Silver={silver_999_kg}")
 
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
