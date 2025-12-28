@@ -25,33 +25,33 @@ gold_22k_10g = "0"
 silver_999_kg = "0"
 
 tables = soup.find_all("table")
-print(f"Found {len(tables)} tables on the page.\n")  # Debug: How many tables
+print(f"Found {len(tables)} tables\n")
 
-for table in tables:
+for table_idx, table in enumerate(tables):
+    print(f"--- Table {table_idx + 1} ---")
     for tr in table.find_all("tr"):
         cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
         if len(cols) < 6:
             continue
         
         row_name_lower = cols[0].lower()
-        
-        # === DEBUG PRINTS START HERE ===
-        print(f"Row name (original): {cols[0]}")                  # Shows exact text from site
-        print(f"Row name (lowered): {row_name_lower}")
-        print(f"10 Gram value: {cols[2]}")                        # Raw 10g price
-        print(f"1 KG value: {cols[4]}")                           # Raw 1kg price
+        print(f"Row original: '{cols[0]}'")
+        print(f"Row lowered: '{row_name_lower}'")
+        print(f"10g raw: '{cols[2]}' -> extracted: {extract_number(cols[2])}")
+        print(f"1kg raw: '{cols[4]}' -> extracted: {extract_number(cols[4])}")
         print("---")
-        # === DEBUG PRINTS END HERE ===
         
-        if "24" in row_name_lower and "karat" in row_name_lower:
+        if "24 karat" in row_name_lower:
             gold_24k_10g = extract_number(cols[2])
-            print(">>> MATCHED 24K!")  # Extra confirmation
-        elif "22 karat" in row_name_lower: 
+            print(">>> 24K MATCHED!")
+        elif "22 karat" in row_name_lower:
             gold_22k_10g = extract_number(cols[2])
-            print(">>> MATCHED 22K!")
-        elif "999 fine" in row_name_lower: 
+            print(">>> 22K MATCHED!")
+        elif "999 fine" in row_name_lower:
             silver_999_kg = extract_number(cols[4])
-            print(">>> MATCHED Silver!")
+            print(">>> SILVER MATCHED!")
+
+print(f"\nFinal extracted: 24K={gold_24k_10g}, 22K={gold_22k_10g}, Silver={silver_999_kg}")
 
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
@@ -69,6 +69,5 @@ data = {
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print("\nFinal values:")
 print("Success!")
 print(json.dumps(data, ensure_ascii=False, indent=2))
