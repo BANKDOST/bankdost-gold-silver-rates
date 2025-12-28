@@ -25,6 +25,7 @@ gold_22k_10g = "0"
 silver_999_kg = "0"
 
 tables = soup.find_all("table")
+print(f"Found {len(tables)} tables on the page.\n")  # Debug: How many tables
 
 for table in tables:
     for tr in table.find_all("tr"):
@@ -34,12 +35,23 @@ for table in tables:
         
         row_name_lower = cols[0].lower()
         
-        if "24 karat" in row_name_lower:          # Matches "Gold 24 Karat (Rs ₹)"
-            gold_24k_10g = extract_number(cols[2])  # 10 Gram column
-        elif "22 karat" in row_name_lower:        # Matches "Gold 22 Karat (Rs ₹)"
+        # === DEBUG PRINTS START HERE ===
+        print(f"Row name (original): {cols[0]}")                  # Shows exact text from site
+        print(f"Row name (lowered): {row_name_lower}")
+        print(f"10 Gram value: {cols[2]}")                        # Raw 10g price
+        print(f"1 KG value: {cols[4]}")                           # Raw 1kg price
+        print("---")
+        # === DEBUG PRINTS END HERE ===
+        
+        if "24 karat" in row_name_lower: 
+            gold_24k_10g = extract_number(cols[2])
+            print(">>> MATCHED 24K!")  # Extra confirmation
+        elif "22 karat" in row_name_lower: 
             gold_22k_10g = extract_number(cols[2])
-        elif "999 fine" in row_name_lower:        # Matches "Silver 999 Fine (Rs ₹)"
-            silver_999_kg = extract_number(cols[4]) # 1 Kilogram column
+            print(">>> MATCHED 22K!")
+        elif "999 fine" in row_name_lower: 
+            silver_999_kg = extract_number(cols[4])
+            print(">>> MATCHED Silver!")
 
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
@@ -57,5 +69,6 @@ data = {
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
+print("\nFinal values:")
 print("Success!")
 print(json.dumps(data, ensure_ascii=False, indent=2))
