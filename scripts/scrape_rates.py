@@ -34,13 +34,14 @@ for table in tables:
         
         row_name_lower = cols[0].lower()
         
-        if "24" in row_name_lower and "karat" in row_name_lower:  # Robust match for first row "Gold 24 Karat (Rs ₹)"
-            gold_24k_10g = extract_number(cols[2])
-        elif "22 karat" in row_name_lower:  # Matches "Gold 22 Karat (Rs ₹)"
-            gold_22k_10g = extract_number(cols[2])
-        elif "999 fine" in row_name_lower:  # Matches "Silver 999 Fine (Rs ₹)"
+        if "karat" in row_name_lower:
+            if gold_24k_10g == "0":  # First karat row encountered = 24K (always first)
+                gold_24k_10g = extract_number(cols[2])
+            elif "22" in row_name_lower:  # Subsequent karat row with "22" = 22K
+                gold_22k_10g = extract_number(cols[2])
+        elif "999 fine" in row_name_lower:
             silver_999_kg = extract_number(cols[4])
-
+            
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
 
