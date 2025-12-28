@@ -40,8 +40,7 @@ for table_idx, table in enumerate(tables):
         print(f"10g raw: '{cols[2]}' -> extracted: {extract_number(cols[2])}")
         print(f"1kg raw: '{cols[4]}' -> extracted: {extract_number(cols[4])}")
         print("---")
-        
-        if "24 karat" in row_name_lower:
+               if "24" in row_name_lower and "karat" in row_name_lower:
             gold_24k_10g = extract_number(cols[2])
             print(">>> 24K MATCHED!")
         elif "22 karat" in row_name_lower:
