@@ -23,30 +23,34 @@ def extract_number(text):
     """Keep only digits"""
     return re.sub(r"[^\d]", "", text) or "0"
 
-# Get current date/time in IST
+# Current date/time in IST
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
-today_str = now.strftime("%d/%m/%Y")  # IBJA uses DD/MM/YYYY
+today_str = now.strftime("%d/%m/%Y")  # DD/MM/YYYY
 current_time = now.strftime("%I:%M %p IST")
+
+# Flexible regex for date (match 30/12/2025 or 30-12-2025)
+today_regex = today_str.replace("/", "[-/]")
 
 # Initialize rates
 gold_24k_10g = gold_22k_10g = silver_999_kg = "0"
 
-# Find today's date element
-date_tags = soup.find_all(text=re.compile(today_str))
+# Find today's date <p> element
+date_tags = soup.find_all(string=re.compile(today_regex))
 for date_tag in date_tags:
     parent = date_tag.find_parent()
     if parent:
-        # Find the table immediately after today's date
+        # Find the first table after today's date
         table = parent.find_next("table")
         if table:
             for tr in table.find_all("tr"):
-                cols = [td.get_text(strip=True).lower() for td in tr.find_all(["td", "th"])]
+                cols = [td.get_text(strip=True).replace("\u00a0", " ").lower() for td in tr.find_all(["td", "th"])]
                 if len(cols) < 2:
                     continue
                 purity = cols[0]
-                am_rate = extract_number(cols[1])
-                
+
+                am_rate = extract_number(cols[1])  # AM column
+
                 if "gold" in purity and "999" in purity:
                     gold_24k_10g = am_rate
                 elif "gold" in purity and ("916" in purity or "22k" in purity):
