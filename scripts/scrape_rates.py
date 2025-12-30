@@ -5,12 +5,13 @@ import pytz
 import json
 import re
 
+# IBJA website
 URL = "https://ibjarates.com"
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
 }
 
-# Fetch the page
+# Fetch page
 res = requests.get(URL, headers=headers, timeout=30)
 if res.status_code != 200:
     print("Failed to fetch page")
@@ -19,24 +20,24 @@ if res.status_code != 200:
 soup = BeautifulSoup(res.text, "html.parser")
 
 def extract_number(text):
-    """Extract only digits"""
+    """Extract digits only"""
     return re.sub(r"[^\d]", "", text) or "0"
 
-# Get today's date/time in IST
+# Current date/time in IST
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
-today_str = now.strftime("%d-%m-%Y")
+today_str = now.strftime("%d/%m/%Y")  # Matches page date format
 current_time = now.strftime("%I:%M %p IST")
 
-# Initialize values
+# Initialize rates
 gold_24k_10g = gold_22k_10g = silver_999_kg = "0"
 
-# Locate today's date text on the page
+# Find the date text on page
 date_tags = soup.find_all(text=re.compile(today_str))
 for date_tag in date_tags:
     parent = date_tag.find_parent()
     if parent:
-        # Find the next table (left side table below date)
+        # Get the next table (left side table below date)
         table = parent.find_next("table")
         if table:
             for tr in table.find_all("tr"):
@@ -55,9 +56,9 @@ for date_tag in date_tags:
             break
     break
 
-# Prepare JSON
+# Build JSON
 data = {
-    "date": today_str,
+    "date": now.strftime("%d-%m-%Y"),
     "time": current_time,
     "gold_24k_per_10gram": f"₹{gold_24k_10g}",
     "gold_22k_per_10gram": f"₹{gold_22k_10g}",
