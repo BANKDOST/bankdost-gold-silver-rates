@@ -19,41 +19,43 @@ if res.status_code != 200:
 soup = BeautifulSoup(res.text, "html.parser")
 
 def extract_number(text):
-    """Keep only digits"""
+    """Extract only digits"""
     return re.sub(r"[^\d]", "", text) or "0"
 
-# Get today's date in IST
+# Get today's date/time in IST
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
 today_str = now.strftime("%d-%m-%Y")
 current_time = now.strftime("%I:%M %p IST")
 
-# Initialize
+# Initialize values
 gold_24k_10g = gold_22k_10g = silver_999_kg = "0"
 
-# Locate the section below today's date
+# Locate today's date text on the page
 date_tags = soup.find_all(text=re.compile(today_str))
 for date_tag in date_tags:
     parent = date_tag.find_parent()
     if parent:
-        # Find next siblings containing metal rates
-        siblings = parent.find_next_siblings()
-        for sib in siblings:
-            text = sib.get_text(separator=" ").lower()
-            
-            if "gold" in text and "999" in text and gold_24k_10g == "0":
-                gold_24k_10g = extract_number(text)
-            elif "gold" in text and ("916" in text or "22k" in text) and gold_22k_10g == "0":
-                gold_22k_10g = extract_number(text)
-            elif "silver" in text and "999" in text and silver_999_kg == "0":
-                silver_999_kg = extract_number(text)
-            
-            # Break when all values found
-            if gold_24k_10g != "0" and gold_22k_10g != "0" and silver_999_kg != "0":
-                break
-        break  # Stop after first date section
+        # Find the next table (left side table below date)
+        table = parent.find_next("table")
+        if table:
+            for tr in table.find_all("tr"):
+                cols = [td.get_text(strip=True).lower() for td in tr.find_all(["td", "th"])]
+                if len(cols) < 2:
+                    continue
+                purity = cols[0]
+                am_rate = extract_number(cols[1])
+                
+                if "gold" in purity and "999" in purity:
+                    gold_24k_10g = am_rate
+                elif "gold" in purity and ("916" in purity or "22k" in purity):
+                    gold_22k_10g = am_rate
+                elif "silver" in purity and "999" in purity:
+                    silver_999_kg = am_rate
+            break
+    break
 
-# Create JSON
+# Prepare JSON
 data = {
     "date": today_str,
     "time": current_time,
@@ -69,4 +71,4 @@ with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
 print("Success!")
-print(json.dumps(data, ensure_ascii=False, indent=2))
+print(json.dumps(data, indent=2))
