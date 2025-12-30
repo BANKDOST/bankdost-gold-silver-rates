@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-import json
 import pytz
+import json
 import re
 
 URL = "https://ibjarates.com"
@@ -10,6 +10,7 @@ headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
 }
 
+# Fetch the page
 res = requests.get(URL, headers=headers, timeout=30)
 if res.status_code != 200:
     print("Failed to fetch page")
@@ -18,44 +19,44 @@ if res.status_code != 200:
 soup = BeautifulSoup(res.text, "html.parser")
 
 def extract_number(text):
+    """Keep only digits"""
     return re.sub(r"[^\d]", "", text) or "0"
 
-# Initialize
-gold_24k_10g = "0"
-gold_22k_10g = "0"
-silver_999_kg = "0"
-
-# Scrape AM rates
-tables = soup.find_all("table")
-for table in tables:
-    for tr in table.find_all("tr"):
-        cols = [td.get_text(strip=True).lower() for td in tr.find_all(["td", "th"])]
-        if not cols or len(cols) < 2:
-            continue
-        
-        # Gold 24K / 999
-        if "999" in cols[0] and "gold" in cols[0]:
-            if "am" in cols:
-                gold_24k_10g = extract_number(cols[1])
-        
-        # Gold 22K / 916
-        elif "916" in cols[0] or "22k" in cols[0]:
-            if "am" in cols:
-                gold_22k_10g = extract_number(cols[1])
-        
-        # Silver 999 / 1kg
-        elif "999" in cols[0] and "silver" in cols[0]:
-            if "am" in cols:
-                silver_999_kg = extract_number(cols[1])
-
-# Current date/time
+# Get today's date in IST
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
+today_str = now.strftime("%d-%m-%Y")
+current_time = now.strftime("%I:%M %p IST")
 
-# JSON data
+# Initialize
+gold_24k_10g = gold_22k_10g = silver_999_kg = "0"
+
+# Locate the section below today's date
+date_tags = soup.find_all(text=re.compile(today_str))
+for date_tag in date_tags:
+    parent = date_tag.find_parent()
+    if parent:
+        # Find next siblings containing metal rates
+        siblings = parent.find_next_siblings()
+        for sib in siblings:
+            text = sib.get_text(separator=" ").lower()
+            
+            if "gold" in text and "999" in text and gold_24k_10g == "0":
+                gold_24k_10g = extract_number(text)
+            elif "gold" in text and ("916" in text or "22k" in text) and gold_22k_10g == "0":
+                gold_22k_10g = extract_number(text)
+            elif "silver" in text and "999" in text and silver_999_kg == "0":
+                silver_999_kg = extract_number(text)
+            
+            # Break when all values found
+            if gold_24k_10g != "0" and gold_22k_10g != "0" and silver_999_kg != "0":
+                break
+        break  # Stop after first date section
+
+# Create JSON
 data = {
-    "date": now.strftime("%d-%m-%Y"),
-    "time": now.strftime("%I:%M %p IST"),
+    "date": today_str,
+    "time": current_time,
     "gold_24k_per_10gram": f"₹{gold_24k_10g}",
     "gold_22k_per_10gram": f"₹{gold_22k_10g}",
     "silver_999_per_kg": f"₹{silver_999_kg}",
@@ -63,6 +64,7 @@ data = {
     "note": "Rates are IBJA AM benchmark (without taxes/making charges)."
 }
 
+# Save JSON
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
