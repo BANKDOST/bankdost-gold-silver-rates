@@ -5,7 +5,7 @@ import json
 import pytz
 import re
 
-URL = "https://bullions.co.in"
+URL = "https://ibjarates.com"
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
 }
@@ -20,39 +20,47 @@ soup = BeautifulSoup(res.text, "html.parser")
 def extract_number(text):
     return re.sub(r"[^\d]", "", text) or "0"
 
+# Initialize
 gold_24k_10g = "0"
 gold_22k_10g = "0"
 silver_999_kg = "0"
 
+# Scrape AM rates
 tables = soup.find_all("table")
-
 for table in tables:
     for tr in table.find_all("tr"):
-        cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
-        if len(cols) < 6:
+        cols = [td.get_text(strip=True).lower() for td in tr.find_all(["td", "th"])]
+        if not cols or len(cols) < 2:
             continue
         
-        row_name_lower = cols[0].lower()
+        # Gold 24K / 999
+        if "999" in cols[0] and "gold" in cols[0]:
+            if "am" in cols:
+                gold_24k_10g = extract_number(cols[1])
         
-        if "karat" in row_name_lower:
-            if gold_24k_10g == "0":  # First karat row encountered = 24K (always first)
-                gold_24k_10g = extract_number(cols[2])
-            elif "22" in row_name_lower:  # Subsequent karat row with "22" = 22K
-                gold_22k_10g = extract_number(cols[2])
-        elif "999 fine" in row_name_lower:
-            silver_999_kg = extract_number(cols[4])
-            
+        # Gold 22K / 916
+        elif "916" in cols[0] or "22k" in cols[0]:
+            if "am" in cols:
+                gold_22k_10g = extract_number(cols[1])
+        
+        # Silver 999 / 1kg
+        elif "999" in cols[0] and "silver" in cols[0]:
+            if "am" in cols:
+                silver_999_kg = extract_number(cols[1])
+
+# Current date/time
 ist = pytz.timezone("Asia/Kolkata")
 now = datetime.now(ist)
 
+# JSON data
 data = {
     "date": now.strftime("%d-%m-%Y"),
     "time": now.strftime("%I:%M %p IST"),
     "gold_24k_per_10gram": f"₹{gold_24k_10g}",
     "gold_22k_per_10gram": f"₹{gold_22k_10g}",
     "silver_999_per_kg": f"₹{silver_999_kg}",
-    "source": "bullions.co.in",
-    "note": "Rates are indicative bullion rates (without taxes/making charges). May vary by city and jeweller."
+    "source": "ibjarates.com",
+    "note": "Rates are IBJA AM benchmark (without taxes/making charges)."
 }
 
 with open("gold_silver_rate.json", "w", encoding="utf-8") as f:
