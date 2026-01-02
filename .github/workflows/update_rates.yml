@@ -1,15 +1,14 @@
 name: Daily Gold & Silver Rates
 
-# Run daily at 10:00 AM IST
+# Run daily at 11:00 AM IST on working days (Mon-Fri)
 on:
   schedule:
-    - cron: '30 4 * * *'  # UTC 4:30 AM = IST 10:00 AM
-  workflow_dispatch:  # allows manual run
+    - cron: '30 5 * * 1-5'  # 5:30 UTC = 11:00 AM IST | Mon-Fri only
+  workflow_dispatch:       # Allows manual trigger anytime
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout repo
       - name: Checkout repo
@@ -38,5 +37,6 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add gold_silver_rate.json
-          git commit -m "Daily gold & silver rate update" || exit 0
+          git diff --quiet && echo "No changes" && exit 0
+          git commit -m "Daily gold & silver rate update - $(date +'%d/%m/%Y %H:%M IST')"
           git push https://x-access-token:${GH_PAT}@github.com/BANKDOST/bankdost-gold-silver-rates.git HEAD:main
