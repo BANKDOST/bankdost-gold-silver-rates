@@ -1,9 +1,11 @@
 name: Daily Gold & Silver Rates
-# Run daily at 10:00 AM IST
+
+# Run daily at 11:00 AM IST
 on:
   schedule:
     - cron: '30 5 * * 1-5' # UTC 4:30 AM = IST 10:00 AM
   workflow_dispatch: # allows manual run
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -11,18 +13,22 @@ jobs:
       # 1️⃣ Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v4
+
       # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           pip install requests beautifulsoup4 pytz
+
       # 4️⃣ Run scraper
       - name: Run scraper
         run: python scripts/scrape_rates.py
+
       # 5️⃣ Commit & push updated JSON using PAT
       - name: Commit updated JSON
         env:
@@ -30,6 +36,10 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
+
+          # 🔑 THIS LINE FIXES YOUR FAILURE
+          git pull origin main --rebase
+
           git add gold_silver_rate.json
           git commit -m "Daily gold & silver rate update" || exit 0
           git push https://x-access-token:${GH_PAT}@github.com/BANKDOST/bankdost-gold-silver-rates.git HEAD:main
