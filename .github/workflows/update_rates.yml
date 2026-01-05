@@ -1,7 +1,7 @@
 name: Daily Gold & Silver Rates
 on:
   schedule:
-    - cron: '30 4 * * 1-5'  # UTC 4:30 AM → IST 10:00 AM (Mon-Fri)
+    - cron: '30 5 * * 1-5'  # UTC 4:30 AM → IST 10:00 AM (Mon-Fri)
   workflow_dispatch:
 
 jobs:
